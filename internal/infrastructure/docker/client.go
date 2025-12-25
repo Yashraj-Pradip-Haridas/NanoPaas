@@ -11,7 +11,6 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
@@ -431,7 +430,7 @@ func (c *Client) BuildImageWithLogs(ctx context.Context, buildContext io.Reader,
 
 // PullImage pulls an image from a registry
 func (c *Client) PullImage(ctx context.Context, imageName string) error {
-	reader, err := c.cli.ImagePull(ctx, imageName, image.PullOptions{})
+	reader, err := c.cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to pull image %s: %w", imageName, err)
 	}
@@ -449,7 +448,7 @@ func (c *Client) PullImage(ctx context.Context, imageName string) error {
 
 // RemoveImage removes an image
 func (c *Client) RemoveImage(ctx context.Context, imageID string, force bool) error {
-	_, err := c.cli.ImageRemove(ctx, imageID, image.RemoveOptions{
+	_, err := c.cli.ImageRemove(ctx, imageID, types.ImageRemoveOptions{
 		Force:         force,
 		PruneChildren: true,
 	})
@@ -461,11 +460,11 @@ func (c *Client) RemoveImage(ctx context.Context, imageID string, force bool) er
 }
 
 // ListImages lists all NanoPaaS-managed images
-func (c *Client) ListImages(ctx context.Context) ([]image.Summary, error) {
+func (c *Client) ListImages(ctx context.Context) ([]types.ImageSummary, error) {
 	filterArgs := filters.NewArgs()
 	filterArgs.Add("label", "built-by=nanopaas")
 
-	images, err := c.cli.ImageList(ctx, image.ListOptions{
+	images, err := c.cli.ImageList(ctx, types.ImageListOptions{
 		All:     false,
 		Filters: filterArgs,
 	})
@@ -481,7 +480,7 @@ func (c *Client) EnsureNetwork(ctx context.Context) error {
 		return nil
 	}
 
-	networks, err := c.cli.NetworkList(ctx, network.ListOptions{
+	networks, err := c.cli.NetworkList(ctx, types.NetworkListOptions{
 		Filters: filters.NewArgs(filters.Arg("name", c.defaultNetwork)),
 	})
 	if err != nil {
@@ -493,7 +492,7 @@ func (c *Client) EnsureNetwork(ctx context.Context) error {
 		return nil
 	}
 
-	_, err = c.cli.NetworkCreate(ctx, c.defaultNetwork, network.CreateOptions{
+	_, err = c.cli.NetworkCreate(ctx, c.defaultNetwork, types.NetworkCreate{
 		Driver: "bridge",
 		Labels: map[string]string{
 			"managed-by": "nanopaas",

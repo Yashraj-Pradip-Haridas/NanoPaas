@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -13,6 +14,8 @@ type Config struct {
 	Postgres PostgresConfig
 	Redis    RedisConfig
 	Router   RouterConfig
+	GitHub   GitHubConfig
+	Auth     AuthConfig
 }
 
 // ServerConfig holds HTTP server configuration
@@ -64,6 +67,24 @@ type RouterConfig struct {
 	EnableHTTPS bool
 }
 
+// GitHubConfig holds GitHub OAuth configuration
+type GitHubConfig struct {
+	ClientID      string
+	ClientSecret  string
+	WebhookSecret string
+	RedirectURI   string
+	Scopes        []string
+}
+
+// AuthConfig holds authentication configuration
+type AuthConfig struct {
+	JWTSecret        string
+	JWTExpiry        time.Duration
+	JWTRefreshExpiry time.Duration
+	FrontendURL      string
+	CORSOrigins      []string
+}
+
 // Load loads configuration from environment variables with defaults
 func Load() *Config {
 	return &Config{
@@ -106,6 +127,20 @@ func Load() *Config {
 			HTTPSPort:   getEnvInt("ROUTER_HTTPS_PORT", 443),
 			EnableHTTPS: getEnvBool("ROUTER_ENABLE_HTTPS", false),
 		},
+		GitHub: GitHubConfig{
+			ClientID:      getEnv("GITHUB_CLIENT_ID", ""),
+			ClientSecret:  getEnv("GITHUB_CLIENT_SECRET", ""),
+			WebhookSecret: getEnv("GITHUB_WEBHOOK_SECRET", ""),
+			RedirectURI:   getEnv("GITHUB_REDIRECT_URI", "http://localhost:8080/api/v1/auth/github/callback"),
+			Scopes:        []string{"user:email", "repo", "read:org"},
+		},
+		Auth: AuthConfig{
+			JWTSecret:        getEnv("JWT_SECRET", "change-me-in-production"),
+			JWTExpiry:        getEnvDuration("JWT_EXPIRY", 24*time.Hour),
+			JWTRefreshExpiry: getEnvDuration("JWT_REFRESH_EXPIRY", 168*time.Hour),
+			FrontendURL:      getEnv("FRONTEND_URL", "http://localhost:3000"),
+			CORSOrigins:      getEnvSlice("CORS_ALLOWED_ORIGINS", []string{"http://localhost:3000", "http://localhost:8080"}),
+		},
 	}
 }
 
@@ -139,6 +174,21 @@ func getEnvDuration(key string, defaultValue time.Duration) time.Duration {
 		if duration, err := time.ParseDuration(value); err == nil {
 			return duration
 		}
+	}
+	return defaultValue
+}
+
+func getEnvSlice(key string, defaultValue []string) []string {
+	if value := os.Getenv(key); value != "" {
+		parts := strings.Split(value, ",")
+		result := make([]string, 0, len(parts))
+		for _, part := range parts {
+			trimmed := strings.TrimSpace(part)
+			if trimmed != "" {
+				result = append(result, trimmed)
+			}
+		}
+		return result
 	}
 	return defaultValue
 }

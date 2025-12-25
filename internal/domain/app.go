@@ -43,6 +43,11 @@ type App struct {
 	ExposedPort  int    `json:"exposed_port"`
 	InternalPort int    `json:"internal_port,omitempty"`
 
+	// Git/CI integration
+	GitRepoURL string `json:"git_repo_url,omitempty"`
+	GitBranch  string `json:"git_branch,omitempty"`
+	AutoDeploy bool   `json:"auto_deploy"`
+
 	// Timestamps
 	CreatedAt time.Time  `json:"created_at"`
 	UpdatedAt time.Time  `json:"updated_at"`

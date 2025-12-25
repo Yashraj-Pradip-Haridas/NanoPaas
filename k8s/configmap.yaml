@@ -1,0 +1,42 @@
+# NanoPaaS ConfigMap
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nanopaas-config
+data:
+  SERVER_HOST: "0.0.0.0"
+  SERVER_PORT: "8080"
+  POSTGRES_HOST: "postgres"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "nanopaas"
+  POSTGRES_SSL_MODE: "require"
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+  ROUTER_DOMAIN: "apps.yourdomain.com"
+  ROUTER_ENABLE_HTTPS: "true"
+  LOG_LEVEL: "info"
+  LOG_FORMAT: "json"
+  RATE_LIMIT_REQUESTS: "100"
+  RATE_LIMIT_DURATION: "1m"
+---
+# NanoPaaS Secrets (base64 encoded)
+# Generate with: echo -n 'value' | base64
+apiVersion: v1
+kind: Secret
+metadata:
+  name: nanopaas-secrets
+type: Opaque
+data:
+  # echo -n 'nanopaas' | base64
+  POSTGRES_USER: bmFub3BhYXM=
+  # echo -n 'your-secure-password' | base64
+  POSTGRES_PASSWORD: eW91ci1zZWN1cmUtcGFzc3dvcmQ=
+  # echo -n 'your-github-client-id' | base64
+  GITHUB_CLIENT_ID: eW91ci1naXRodWItY2xpZW50LWlk
+  # echo -n 'your-github-client-secret' | base64
+  GITHUB_CLIENT_SECRET: eW91ci1naXRodWItY2xpZW50LXNlY3JldA==
+  # Generate with: openssl rand -base64 32 | base64
+  JWT_SECRET: Y2hhbmdlLW1lLWluLXByb2R1Y3Rpb24=
+  # echo -n 'your-webhook-secret' | base64
+  GITHUB_WEBHOOK_SECRET: eW91ci13ZWJob29rLXNlY3JldA==
