@@ -56,21 +56,21 @@ type ScaleRequest struct {
 
 // AppResponse represents an app in API responses
 type AppResponse struct {
-	ID              string            `json:"id"`
-	Name            string            `json:"name"`
-	Slug            string            `json:"slug"`
-	Description     string            `json:"description,omitempty"`
-	Status          string            `json:"status"`
-	URL             string            `json:"url,omitempty"`
-	Replicas        int               `json:"replicas"`
-	TargetReplicas  int               `json:"target_replicas"`
-	CurrentImageID  string            `json:"current_image_id,omitempty"`
-	EnvVars         map[string]string `json:"env_vars,omitempty"`
-	ExposedPort     int               `json:"exposed_port"`
-	MemoryLimit     int64             `json:"memory_limit"`
-	CPUQuota        int64             `json:"cpu_quota"`
-	CreatedAt       string            `json:"created_at"`
-	UpdatedAt       string            `json:"updated_at"`
+	ID             string            `json:"id"`
+	Name           string            `json:"name"`
+	Slug           string            `json:"slug"`
+	Description    string            `json:"description,omitempty"`
+	Status         string            `json:"status"`
+	URL            string            `json:"url,omitempty"`
+	Replicas       int               `json:"replicas"`
+	TargetReplicas int               `json:"target_replicas"`
+	CurrentImageID string            `json:"current_image_id,omitempty"`
+	EnvVars        map[string]string `json:"env_vars,omitempty"`
+	ExposedPort    int               `json:"exposed_port"`
+	MemoryLimit    int64             `json:"memory_limit"`
+	CPUQuota       int64             `json:"cpu_quota"`
+	CreatedAt      string            `json:"created_at"`
+	UpdatedAt      string            `json:"updated_at"`
 }
 
 // NewAppHandler creates a new app handler

@@ -62,6 +62,9 @@ type Hub struct {
 	// Mutex for thread-safe operations
 	mu sync.RWMutex
 
+	// done channel for graceful shutdown
+	done chan struct{}
+
 	logger *zap.Logger
 }
 
@@ -88,6 +91,7 @@ func NewHub(logger *zap.Logger) *Hub {
 		unregister:  make(chan *Client),
 		subscribe:   make(chan *Subscription),
 		unsubscribe: make(chan *Subscription),
+		done:        make(chan struct{}),
 		logger:      logger,
 	}
 }
@@ -96,6 +100,15 @@ func NewHub(logger *zap.Logger) *Hub {
 func (h *Hub) Run() {
 	for {
 		select {
+		case <-h.done:
+			// Close all client connections
+			h.mu.Lock()
+			for client := range h.clients {
+				close(client.Send)
+				client.Conn.Close()
+			}
+			h.mu.Unlock()
+			return
 		case client := <-h.register:
 			h.mu.Lock()
 			h.clients[client] = true
@@ -163,6 +176,11 @@ func (h *Hub) Run() {
 			}
 		}
 	}
+}
+
+// Stop gracefully stops the hub
+func (h *Hub) Stop() {
+	close(h.done)
 }
 
 // Broadcast sends a message to all clients subscribed to a topic

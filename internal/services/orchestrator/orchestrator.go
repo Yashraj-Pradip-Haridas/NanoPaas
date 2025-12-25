@@ -205,12 +205,12 @@ func (o *Orchestrator) startContainers(ctx context.Context, app *domain.App, dep
 // buildLabels creates labels for a container
 func (o *Orchestrator) buildLabels(app *domain.App, deployment *domain.Deployment, replica int) map[string]string {
 	return map[string]string{
-		"nanopaas.app.id":         app.ID.String(),
-		"nanopaas.app.name":       app.Name,
-		"nanopaas.app.slug":       app.Slug,
-		"nanopaas.deployment.id":  deployment.ID.String(),
-		"nanopaas.replica":        fmt.Sprintf("%d", replica),
-		"traefik.enable":          "true",
+		"nanopaas.app.id":                            app.ID.String(),
+		"nanopaas.app.name":                          app.Name,
+		"nanopaas.app.slug":                          app.Slug,
+		"nanopaas.deployment.id":                     deployment.ID.String(),
+		"nanopaas.replica":                           fmt.Sprintf("%d", replica),
+		"traefik.enable":                             "true",
 		"traefik.http.routers." + app.Slug + ".rule": fmt.Sprintf("Host(`%s.localhost`)", app.Subdomain),
 		"traefik.http.services." + app.Slug + ".loadbalancer.server.port": fmt.Sprintf("%d", app.ExposedPort),
 	}
@@ -316,18 +316,39 @@ func (o *Orchestrator) Scale(ctx context.Context, app *domain.App, targetReplica
 
 	app.TargetReplicas = targetReplicas
 
+	var err error
 	if targetReplicas > currentCount {
 		// Scale up
-		return o.scaleUp(ctx, app, currentContainers, targetReplicas-currentCount)
+		err = o.scaleUp(ctx, app, currentContainers, targetReplicas-currentCount)
+	} else {
+		// Scale down
+		err = o.scaleDown(ctx, app, currentContainers, currentCount-targetReplicas)
 	}
 
-	// Scale down
-	return o.scaleDown(ctx, app, currentContainers, currentCount-targetReplicas)
+	if err != nil {
+		return err
+	}
+
+	// Update app status after successful scaling
+	app.Replicas = targetReplicas
+	if targetReplicas > 0 {
+		app.MarkRunning()
+	} else {
+		app.MarkStopped()
+	}
+
+	return nil
 }
 
 // scaleUp adds more replicas
 func (o *Orchestrator) scaleUp(ctx context.Context, app *domain.App, currentContainers []string, count int) error {
 	startReplica := len(currentContainers)
+
+	o.logger.Info("scaleUp called",
+		zap.String("app_id", app.ID.String()),
+		zap.String("image", app.CurrentImageID),
+		zap.Int("count", count),
+	)
 
 	for i := 0; i < count; i++ {
 		replica := startReplica + i
@@ -344,8 +365,31 @@ func (o *Orchestrator) scaleUp(ctx context.Context, app *domain.App, currentCont
 			RestartPolicy: "on-failure",
 		}
 
+		o.logger.Debug("Creating container",
+			zap.String("name", containerName),
+			zap.String("image", opts.Image),
+		)
+
+		// Try to remove any existing container with the same name (cleanup from previous runs)
+		// This is a best-effort cleanup - we ignore errors if container doesn't exist
+		existingContainers, _ := o.dockerClient.ListContainers(ctx, true)
+		for _, c := range existingContainers {
+			if c.Name == containerName || c.Name == "/"+containerName {
+				o.logger.Info("Removing existing container with same name",
+					zap.String("name", containerName),
+					zap.String("id", c.ID),
+				)
+				o.dockerClient.RemoveContainer(ctx, c.ID, true)
+			}
+		}
+
 		containerID, err := o.dockerClient.CreateContainer(ctx, opts)
 		if err != nil {
+			o.logger.Error("Failed to create container",
+				zap.Error(err),
+				zap.String("name", containerName),
+				zap.String("image", opts.Image),
+			)
 			return fmt.Errorf("failed to create replica %d: %w", replica, err)
 		}
 
@@ -397,11 +441,11 @@ func (o *Orchestrator) scaleDown(ctx context.Context, app *domain.App, currentCo
 // buildScaleLabels creates labels for scaled containers
 func (o *Orchestrator) buildScaleLabels(app *domain.App, replica int) map[string]string {
 	return map[string]string{
-		"nanopaas.app.id":   app.ID.String(),
-		"nanopaas.app.name": app.Name,
-		"nanopaas.app.slug": app.Slug,
-		"nanopaas.replica":  fmt.Sprintf("%d", replica),
-		"traefik.enable":    "true",
+		"nanopaas.app.id":                            app.ID.String(),
+		"nanopaas.app.name":                          app.Name,
+		"nanopaas.app.slug":                          app.Slug,
+		"nanopaas.replica":                           fmt.Sprintf("%d", replica),
+		"traefik.enable":                             "true",
 		"traefik.http.routers." + app.Slug + ".rule": fmt.Sprintf("Host(`%s.localhost`)", app.Subdomain),
 		"traefik.http.services." + app.Slug + ".loadbalancer.server.port": fmt.Sprintf("%d", app.ExposedPort),
 	}

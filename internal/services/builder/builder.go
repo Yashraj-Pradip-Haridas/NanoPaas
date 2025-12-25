@@ -64,10 +64,10 @@ type Builder struct {
 	dockerClient *docker.Client
 	logger       *zap.Logger
 
-	jobQueue    chan *BuildJob
-	workerWg    sync.WaitGroup
-	ctx         context.Context
-	cancel      context.CancelFunc
+	jobQueue chan *BuildJob
+	workerWg sync.WaitGroup
+	ctx      context.Context
+	cancel   context.CancelFunc
 
 	// Active builds tracking
 	activeBuilds   map[uuid.UUID]*BuildJob
@@ -100,6 +100,14 @@ func NewBuilder(config BuilderConfig, dockerClient *docker.Client, logger *zap.L
 	)
 
 	return b
+}
+
+// Stop gracefully stops the builder service, waiting for in-progress builds to complete
+func (b *Builder) Stop() {
+	b.logger.Info("Stopping builder service...")
+	b.cancel()        // Signal workers to stop
+	b.workerWg.Wait() // Wait for all workers to finish
+	b.logger.Info("Builder service stopped")
 }
 
 // SubmitBuild submits a new build job to the queue

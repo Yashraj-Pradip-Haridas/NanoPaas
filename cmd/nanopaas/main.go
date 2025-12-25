@@ -282,22 +282,50 @@ func main() {
 		WriteTimeout: cfg.Server.WriteTimeout,
 	}
 
-	// Graceful shutdown
+	// Graceful shutdown with resource cleanup
 	done := make(chan struct{})
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
 		<-quit
-		logger.Info("Shutting down server...")
+		logger.Info("Initiating graceful shutdown...")
 
+		// Create shutdown context with timeout
 		ctx, cancel := context.WithTimeout(context.Background(), cfg.Server.ShutdownTimeout)
 		defer cancel()
 
+		// 1. Stop accepting new HTTP requests
 		if err := server.Shutdown(ctx); err != nil {
-			logger.Error("Server shutdown error", zap.Error(err))
+			logger.Error("HTTP server shutdown error", zap.Error(err))
+		} else {
+			logger.Info("HTTP server stopped gracefully")
 		}
 
+		// 2. Stop the builder service (wait for in-progress builds)
+		logger.Info("Stopping builder service...")
+		builderService.Stop()
+		logger.Info("Builder service stopped")
+
+		// 3. Stop WebSocket hub
+		logger.Info("Stopping WebSocket hub...")
+		wsHub.Stop()
+		logger.Info("WebSocket hub stopped")
+
+		// 4. Close database connection pool
+		logger.Info("Closing database connections...")
+		dbPool.Close()
+		logger.Info("Database connections closed")
+
+		// 5. Close Docker client
+		logger.Info("Closing Docker client...")
+		if err := dockerClient.Close(); err != nil {
+			logger.Error("Docker client close error", zap.Error(err))
+		} else {
+			logger.Info("Docker client closed")
+		}
+
+		logger.Info("Graceful shutdown complete")
 		close(done)
 	}()
 
@@ -345,4 +373,3 @@ func corsMiddleware(allowedOrigins []string) func(http.Handler) http.Handler {
 		})
 	}
 }
-

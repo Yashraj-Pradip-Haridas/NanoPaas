@@ -64,7 +64,7 @@ func (h *LogHandler) GetAppLogs(w http.ResponseWriter, r *http.Request) {
 	// Filter by app ID label
 	var containers []docker.ContainerInfo
 	for _, c := range allContainers {
-		if c.Labels["nanopaas.app_id"] == appID {
+		if c.Labels["nanopaas.app.id"] == appID {
 			containers = append(containers, c)
 		}
 	}
@@ -126,7 +126,7 @@ func (h *LogHandler) StreamAppLogs(w http.ResponseWriter, r *http.Request) {
 	// Filter by app ID label
 	var containers []docker.ContainerInfo
 	for _, c := range allContainers {
-		if c.Labels["nanopaas.app_id"] == appID {
+		if c.Labels["nanopaas.app.id"] == appID {
 			containers = append(containers, c)
 		}
 	}

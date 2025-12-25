@@ -1,0 +1,134 @@
+# ===============================
+# OS Generated Files
+# ===============================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ===============================
+# IDE / Editor
+# ===============================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# ===============================
+# Go
+# ===============================
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+/nanopaas
+/bin/
+
+# Test binary
+*.test
+
+# Output of go coverage tool
+*.out
+coverage.txt
+coverage.html
+
+# Go workspace file
+go.work
+go.work.sum
+
+# Vendor directory (if not committing dependencies)
+# vendor/
+
+# ===============================
+# Node.js / Frontend
+# ===============================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Build output
+frontend/dist/
+frontend/build/
+.next/
+out/
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+frontend/.env
+frontend/.env.local
+
+# ===============================
+# Docker
+# ===============================
+# Docker Compose override files
+docker-compose.override.yml
+docker-compose.local.yml
+
+# ===============================
+# Logs
+# ===============================
+*.log
+logs/
+error.log
+logs.txt
+full_logs.txt
+events.txt
+
+# ===============================
+# Temporary Files
+# ===============================
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.cache
+
+# ===============================
+# Build / Distribution
+# ===============================
+dist/
+build/
+.cache/
+
+# ===============================
+# Testing
+# ===============================
+.nyc_output/
+coverage/
+
+# ===============================
+# NanoPaaS Specific
+# ===============================
+# Build work directory
+/work/
+/builds/
+
+# Data directories (if running locally)
+/data/
+/postgres-data/
+/redis-data/
+
+# Traefik config (generated)
+/traefik/dynamic/
+
+# Secrets
+*.pem
+*.key
+secrets/

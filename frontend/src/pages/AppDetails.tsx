@@ -82,8 +82,66 @@ export default function AppDetails() {
         }
     }, [app?.env_vars])
 
+    // WebSocket connection for logs
+    useEffect(() => {
+        if (!id || activeTab !== 'logs') return
+
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+        const wsUrl = `${wsProtocol}//localhost:8080/ws/apps/${id}/logs`
+
+        let ws: WebSocket | null = null
+        let reconnectTimer: number | null = null
+
+        const connect = () => {
+            ws = new WebSocket(wsUrl)
+
+            ws.onopen = () => {
+                console.log('WebSocket connected for logs')
+            }
+
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data)
+                    if (data.type === 'log' && data.data) {
+                        setLogs(prev => [...prev.slice(-500), data.data])
+                    }
+                } catch {
+                    // Plain text log
+                    setLogs(prev => [...prev.slice(-500), event.data])
+                }
+            }
+
+            ws.onerror = (err) => {
+                console.error('WebSocket error:', err)
+            }
+
+            ws.onclose = () => {
+                console.log('WebSocket closed, reconnecting in 3s...')
+                reconnectTimer = window.setTimeout(connect, 3000)
+            }
+        }
+
+        connect()
+
+        return () => {
+            if (ws) ws.close()
+            if (reconnectTimer) clearTimeout(reconnectTimer)
+        }
+    }, [id, activeTab])
+
     const restartMutation = useMutation({
         mutationFn: () => api.restartApp(id!),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['app', id] }),
+    })
+
+    // Start mutation: scale to 1 if no replicas, otherwise restart
+    const startMutation = useMutation({
+        mutationFn: async () => {
+            if (app && app.replicas === 0) {
+                return api.scaleApp(id!, 1)
+            }
+            return api.restartApp(id!)
+        },
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ['app', id] }),
     })
 
@@ -207,11 +265,11 @@ export default function AppDetails() {
                         ) : (
                             <button
                                 className="btn btn-primary"
-                                onClick={() => restartMutation.mutate()}
-                                disabled={restartMutation.isPending}
+                                onClick={() => startMutation.mutate()}
+                                disabled={startMutation.isPending}
                             >
                                 <Play size={16} />
-                                Start
+                                {app.replicas === 0 ? 'Start' : 'Restart'}
                             </button>
                         )}
                     </div>

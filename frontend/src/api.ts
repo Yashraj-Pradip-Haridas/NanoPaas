@@ -148,10 +148,10 @@ class ApiClient {
         return this.request<Build>(`/api/v1/builds/${buildId}`)
     }
 
-    async startBuildFromGit(appId: string, repoUrl: string, branch?: string) {
+    async startBuildFromGit(appId: string, repoUrl: string, slug: string, branch?: string) {
         return this.request<Build>(`/api/v1/apps/${appId}/builds/git`, {
             method: 'POST',
-            body: { repo_url: repoUrl, branch: branch || 'main' },
+            body: { repo_url: repoUrl, app_slug: slug, branch: branch || 'main' },
         })
     }
 

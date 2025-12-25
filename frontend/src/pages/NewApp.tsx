@@ -29,7 +29,7 @@ export default function NewApp() {
             })
 
             // Start build from Git
-            await api.startBuildFromGit(app.id, selectedRepo.clone_url, branch)
+            await api.startBuildFromGit(app.id, selectedRepo.clone_url, app.slug, branch)
 
             return app
         },
